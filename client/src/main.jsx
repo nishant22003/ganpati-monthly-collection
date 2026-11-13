@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
-const API = "http://localhost:5000/api";
+const API =
+  (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "") +
+  "/api";
 const MONTHS = [
   "October 2026",
   "November 2026",

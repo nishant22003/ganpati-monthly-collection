@@ -7,7 +7,14 @@ import { randomUUID } from "node:crypto";
 import { google } from "googleapis";
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://ganpati-monthly-collection.vercel.app",
+    ],
+  }),
+);
 app.use(express.json());
 
 const PORT = Number(process.env.PORT || 5000);
