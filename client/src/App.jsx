@@ -66,6 +66,8 @@ function App() {
     [newPin, setNewPin] = useState(""),
     [confirmNewPin, setConfirmNewPin] = useState("");
   const [showPin, setShowPin] = useState(false);
+  const [showRegisterPin, setShowRegisterPin] = useState(false);
+  const [showAdminPin, setShowAdminPin] = useState(false);
   const [showPinForm, setShowPinForm] = useState(false),
     [loading, setLoading] = useState(false);
 
@@ -266,13 +268,21 @@ function App() {
           </button>
         </nav>
       )}
-      <section className="panel">
+      <section
+        className={`panel ${["login", "adminLogin", "register"].includes(page) ? "auth-panel" : ""}`}
+      >
         {msg && <div className="success">{msg}</div>}
         {err && <div className="error">{err}</div>}
         {page === "login" && (
-          <div className="form-content">
+          <div className="form-content login-card">
+            <div className="login-mark" aria-hidden="true">
+              ॐ
+            </div>
+            <span className="login-eyebrow">GANPATI COLLECTION</span>
             <h2>Member Login</h2>
-            <p className="subtitle">Login to your collection account.</p>
+            <p className="subtitle">
+              Welcome back! Login to your collection account.
+            </p>
             <label>Member Name</label>
             <input
               value={name}
@@ -280,21 +290,23 @@ function App() {
               placeholder="Enter your name"
             />
             <label>4-digit PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength="4"
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-              placeholder="Enter PIN"
-            />
-            <button
-              type="button"
-              className="pin-visibility"
-              onClick={() => setShowPin((v) => !v)}
-            >
-              {showPin ? "Hide PIN" : "Show PIN"}
-            </button>
+            <div className="pin-input-row">
+              <input
+                type={showPin ? "text" : "password"}
+                inputMode="numeric"
+                maxLength="4"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                placeholder="Enter PIN"
+              />
+              <button
+                type="button"
+                className="pin-visibility"
+                onClick={() => setShowPin((v) => !v)}
+              >
+                {showPin ? "Hide" : "Show"}
+              </button>
+            </div>
             <button
               className="primary full-btn"
               onClick={login}
@@ -305,7 +317,11 @@ function App() {
           </div>
         )}
         {page === "register" && (
-          <div className="form-content">
+          <div className="form-content login-card">
+            <div className="login-mark" aria-hidden="true">
+              ॐ
+            </div>
+            <span className="login-eyebrow">JOIN OUR COMMUNITY</span>
             <h2>Create Account</h2>
             <label>Full Name</label>
             <input
@@ -314,21 +330,41 @@ function App() {
               placeholder="Enter full name"
             />
             <label>Create 4-digit PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength="4"
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-            />
+            <div className="pin-input-row">
+              <input
+                type={showRegisterPin ? "text" : "password"}
+                inputMode="numeric"
+                maxLength="4"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+              />
+              <button
+                type="button"
+                className="pin-visibility"
+                onClick={() => setShowRegisterPin((v) => !v)}
+              >
+                {showRegisterPin ? "Hide" : "Show"}
+              </button>
+            </div>
             <label>Confirm PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength="4"
-              value={confirmPin}
-              onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-            />
+            <div className="pin-input-row">
+              <input
+                type={showRegisterPin ? "text" : "password"}
+                inputMode="numeric"
+                maxLength="4"
+                value={confirmPin}
+                onChange={(e) =>
+                  setConfirmPin(e.target.value.replace(/\D/g, ""))
+                }
+              />
+              <button
+                type="button"
+                className="pin-visibility"
+                onClick={() => setShowRegisterPin((v) => !v)}
+              >
+                {showRegisterPin ? "Hide" : "Show"}
+              </button>
+            </div>
             <button
               className="primary full-btn"
               onClick={register}
@@ -339,17 +375,32 @@ function App() {
           </div>
         )}
         {page === "adminLogin" && (
-          <div className="form-content">
+          <div className="form-content login-card">
+            <div className="login-mark" aria-hidden="true">
+              ॐ
+            </div>
+            <span className="login-eyebrow">SECURE ADMIN ACCESS</span>
             <h2>Admin Login</h2>
-            <p className="subtitle">Authorized access only.</p>
+            <p className="subtitle">
+              Authorized access only. Please enter your PIN.
+            </p>
             <label>Admin PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength="4"
-              value={adminPin}
-              onChange={(e) => setAdminPin(e.target.value.replace(/\D/g, ""))}
-            />
+            <div className="pin-input-row">
+              <input
+                type={showAdminPin ? "text" : "password"}
+                inputMode="numeric"
+                maxLength="4"
+                value={adminPin}
+                onChange={(e) => setAdminPin(e.target.value.replace(/\D/g, ""))}
+              />
+              <button
+                type="button"
+                className="pin-visibility"
+                onClick={() => setShowAdminPin((v) => !v)}
+              >
+                {showAdminPin ? "Hide" : "Show"}
+              </button>
+            </div>
             <button
               className="primary full-btn"
               onClick={adminLogin}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import MemberTable from "./MemberTable.jsx";
 
 export default function MemberPage(props) {
@@ -26,15 +26,16 @@ export default function MemberPage(props) {
     loadPublicCollection,
     token,
   } = props;
-  const paidMonths = new Set(
-    (
-      publicMembers.find(
-        (member) => member.name?.toLowerCase() === user?.name?.toLowerCase(),
-      )?.monthly || []
-    )
+  const [showPinValues, setShowPinValues] = useState(false);
+  const paidMonths = useMemo(() => new Set(
+    (publicMembers.find((member) => member.name?.toLowerCase() === user?.name?.toLowerCase())?.monthly || [])
       .filter((item) => item.paid)
       .map((item) => item.month),
-  );
+  ), [publicMembers, user?.name]);
+  const unpaidMonths = MONTHS.filter((item) => !paidMonths.has(item));
+  useEffect(() => {
+    if (unpaidMonths.length && !unpaidMonths.includes(month)) setMonth(unpaidMonths[0]);
+  }, [unpaidMonths.join("|"), month, setMonth]);
   return (
     <>
       <div className="dashboard-heading">
@@ -55,15 +56,13 @@ export default function MemberPage(props) {
         </select>
         {type === "monthly" && (
           <>
-            <label>Month</label>
-            <select value={month} onChange={(e) => setMonth(e.target.value)}>
-              {MONTHS.map((m) => (
-                <option key={m} value={m} disabled={paidMonths.has(m)}>
-                  {m}
-                  {paidMonths.has(m) ? " — Paid ✓" : " — Pending"}
-                </option>
-              ))}
+            <label>Unpaid Month</label>
+            <select value={unpaidMonths.length ? month : ""} onChange={(e) => setMonth(e.target.value)} disabled={!unpaidMonths.length}>
+              {unpaidMonths.length ? unpaidMonths.map((m) => (
+                <option key={m} value={m}>{m} — Unpaid</option>
+              )) : <option value="">All months paid ✓</option>}
             </select>
+            {!unpaidMonths.length && <p className="success">All monthly payments are marked as paid.</p>}
           </>
         )}
         <p className="note">
@@ -72,7 +71,7 @@ export default function MemberPage(props) {
         <button
           className="primary full-btn"
           onClick={submitPayment}
-          disabled={loading}
+          disabled={loading || (type === "monthly" && unpaidMonths.length === 0)}
         >
           Submit Payment Request
         </button>
@@ -93,29 +92,18 @@ export default function MemberPage(props) {
         {showPinForm && (
           <>
             <label>Current PIN</label>
-            <input
-              type="password"
-              maxLength="4"
-              value={oldPin}
-              onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ""))}
-            />
+            <div className="pin-input-row">
+              <input type={showPinValues ? "text" : "password"} inputMode="numeric" maxLength="4" value={oldPin} onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ""))} />
+              <button type="button" className="pin-visibility" onClick={() => setShowPinValues((v) => !v)}>{showPinValues ? "Hide" : "Show"}</button>
+            </div>
             <label>New PIN</label>
-            <input
-              type="password"
-              maxLength="4"
-              value={newPin}
-              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
-            />
+            <div className="pin-input-row">
+              <input type={showPinValues ? "text" : "password"} inputMode="numeric" maxLength="4" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))} />
+            </div>
             <label>Confirm New PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength="4"
-              value={confirmNewPin}
-              onChange={(e) =>
-                setConfirmNewPin(e.target.value.replace(/\D/g, ""))
-              }
-            />
+            <div className="pin-input-row">
+              <input type={showPinValues ? "text" : "password"} inputMode="numeric" maxLength="4" value={confirmNewPin} onChange={(e) => setConfirmNewPin(e.target.value.replace(/\D/g, ""))} />
+            </div>
             <button
               className="primary full-btn"
               onClick={changePin}
