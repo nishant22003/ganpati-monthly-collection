@@ -29,6 +29,36 @@ const auth = new google.auth.GoogleAuth({
 });
 const sheets = google.sheets({ version: "v4", auth });
 
+// Short-lived in-memory cache for dashboard reads.
+// Writes invalidate the cache so payment/member changes appear immediately.
+const READ_CACHE_TTL_MS = 10000;
+const readCache = new Map();
+
+async function cachedRows(tab, range = "A:Z") {
+  const key = `${tab}:${range}`;
+  const now = Date.now();
+  const cached = readCache.get(key);
+  if (cached?.pending) return cached.pending;
+  if (cached && now - cached.time < READ_CACHE_TTL_MS) return cached.value;
+
+  const pending = rows(tab, range)
+    .then((value) => {
+      readCache.set(key, { time: Date.now(), value });
+      return value;
+    })
+    .catch((error) => {
+      readCache.delete(key);
+      throw error;
+    });
+
+  readCache.set(key, { time: now, pending });
+  return pending;
+}
+
+function invalidateReadCache() {
+  readCache.clear();
+}
+
 async function rows(tab, range = "A:Z") {
   const r = await sheets.spreadsheets.values.get({
     spreadsheetId,
@@ -44,6 +74,7 @@ async function append(tab, values) {
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [values] },
   });
+  invalidateReadCache();
 }
 async function updateCell(tab, cell, value) {
   await sheets.spreadsheets.values.update({
@@ -52,6 +83,7 @@ async function updateCell(tab, cell, value) {
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [[value]] },
   });
+  invalidateReadCache();
 }
 function tokenFor(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "12h" });
@@ -231,7 +263,7 @@ app.get(
   authRequired,
   adminRequired,
   async (req, res) => {
-    const all = await rows("Payment Requests");
+    const all = await cachedRows("Payment Requests");
     res.json({
       requests: all
         .slice(1)
@@ -362,8 +394,10 @@ app.post(
 
 // Build read-only collection details from Members and Monthly Collection tabs.
 async function getCollectionMembers() {
-  const allMembers = await rows("Members");
-  const collectionRows = await rows("Monthly Collection");
+  const [allMembers, collectionRows] = await Promise.all([
+    cachedRows("Members"),
+    cachedRows("Monthly Collection"),
+  ]);
   const result = allMembers
     .slice(1)
     .filter((r) => r[0] && r[3] !== "Deleted")
@@ -414,6 +448,39 @@ app.get("/api/admin/members", authRequired, adminRequired, async (req, res) => {
     res.status(500).json({ error: "Could not load members." });
   }
 });
+
+// One dashboard request loads member collection and payment requests together.
+app.get(
+  "/api/admin/dashboard",
+  authRequired,
+  adminRequired,
+  async (req, res) => {
+    try {
+      const [members, allRequests] = await Promise.all([
+        getCollectionMembers(),
+        cachedRows("Payment Requests"),
+      ]);
+      const requests = allRequests
+        .slice(1)
+        .map((r, i) => ({
+          row: i + 2,
+          id: r[0],
+          memberId: r[1],
+          name: r[2],
+          type: r[3],
+          month: r[4],
+          amount: Number(r[5]),
+          mode: r[6],
+          status: r[7],
+        }))
+        .filter((r) => r.id);
+      res.json({ members, requests, months: MONTHS });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Could not load admin dashboard." });
+    }
+  },
+);
 
 // Admin: rename a member consistently across the member and collection logs.
 app.post(

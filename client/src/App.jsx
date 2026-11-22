@@ -87,6 +87,11 @@ function App() {
     const d = await call("/admin/members", null, t);
     setMembers(d.members || []);
   };
+  const loadAdminDashboard = async (t) => {
+    const d = await call("/admin/dashboard", null, t);
+    setMembers(d.members || []);
+    setRequests(d.requests || []);
+  };
   const loadPublicCollection = async (t) => {
     const d = await call("/collection", null, t);
     setPublicMembers(d.members || []);
@@ -114,7 +119,7 @@ function App() {
       setToken(d.token);
       setUser(d.user);
       setPage("admin");
-      await Promise.all([loadRequests(d.token), loadMembers(d.token)]);
+      await loadAdminDashboard(d.token);
       setAdminPin("");
     });
   const submitPayment = () =>
@@ -132,7 +137,7 @@ function App() {
     });
   const refreshAdmin = () =>
     act(async () => {
-      await Promise.all([loadRequests(token), loadMembers(token)]);
+      await loadAdminDashboard(token);
     });
   const adminAction = (id, action) =>
     act(async () => {
@@ -144,7 +149,7 @@ function App() {
             : {};
       const d = await call(`/admin/requests/${id}/${action}`, reason, token);
       setMsg(d.message);
-      await Promise.all([loadRequests(token), loadMembers(token)]);
+      await loadAdminDashboard(token);
     });
   const renameMember = (m) => {
     const newName = window.prompt("Enter corrected member name:", m.name);
@@ -156,7 +161,7 @@ function App() {
         token,
       );
       setMsg(d.message);
-      await Promise.all([loadMembers(token), loadRequests(token)]);
+      await loadAdminDashboard(token);
     });
   };
   const deleteMember = (m) => {
@@ -169,7 +174,7 @@ function App() {
     act(async () => {
       const d = await call(`/admin/members/${m.id}/delete`, {}, token);
       setMsg(d.message);
-      await Promise.all([loadMembers(token), loadRequests(token)]);
+      await loadAdminDashboard(token);
     });
   };
   const logout = () => {
