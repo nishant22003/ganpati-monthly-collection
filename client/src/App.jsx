@@ -63,7 +63,9 @@ function App() {
   const [memberSearch, setMemberSearch] = useState("");
   const [adminPin, setAdminPin] = useState(""),
     [oldPin, setOldPin] = useState(""),
-    [newPin, setNewPin] = useState("");
+    [newPin, setNewPin] = useState(""),
+    [confirmNewPin, setConfirmNewPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
   const [showPinForm, setShowPinForm] = useState(false),
     [loading, setLoading] = useState(false);
 
@@ -129,10 +131,13 @@ function App() {
     });
   const changePin = () =>
     act(async () => {
+      if (!/^\\d{4}$/.test(newPin) || newPin !== confirmNewPin)
+        throw new Error("New PIN must be 4 digits and both PINs must match.");
       const d = await call("/change-pin", { oldPin, newPin }, token);
       setMsg(d.message);
       setOldPin("");
       setNewPin("");
+      setConfirmNewPin("");
       setShowPinForm(false);
     });
   const refreshAdmin = () =>
@@ -205,6 +210,8 @@ function App() {
     setOldPin,
     newPin,
     setNewPin,
+    confirmNewPin,
+    setConfirmNewPin,
     changePin,
     publicMembers,
     act,
@@ -281,6 +288,13 @@ function App() {
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
               placeholder="Enter PIN"
             />
+            <button
+              type="button"
+              className="pin-visibility"
+              onClick={() => setShowPin((v) => !v)}
+            >
+              {showPin ? "Hide PIN" : "Show PIN"}
+            </button>
             <button
               className="primary full-btn"
               onClick={login}

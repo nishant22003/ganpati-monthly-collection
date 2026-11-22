@@ -18,12 +18,23 @@ export default function MemberPage(props) {
     setOldPin,
     newPin,
     setNewPin,
+    confirmNewPin,
+    setConfirmNewPin,
     changePin,
     publicMembers,
     act,
     loadPublicCollection,
     token,
   } = props;
+  const paidMonths = new Set(
+    (
+      publicMembers.find(
+        (member) => member.name?.toLowerCase() === user?.name?.toLowerCase(),
+      )?.monthly || []
+    )
+      .filter((item) => item.paid)
+      .map((item) => item.month),
+  );
   return (
     <>
       <div className="dashboard-heading">
@@ -47,7 +58,10 @@ export default function MemberPage(props) {
             <label>Month</label>
             <select value={month} onChange={(e) => setMonth(e.target.value)}>
               {MONTHS.map((m) => (
-                <option key={m}>{m}</option>
+                <option key={m} value={m} disabled={paidMonths.has(m)}>
+                  {m}
+                  {paidMonths.has(m) ? " — Paid ✓" : " — Pending"}
+                </option>
               ))}
             </select>
           </>
@@ -91,6 +105,16 @@ export default function MemberPage(props) {
               maxLength="4"
               value={newPin}
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
+            />
+            <label>Confirm New PIN</label>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength="4"
+              value={confirmNewPin}
+              onChange={(e) =>
+                setConfirmNewPin(e.target.value.replace(/\D/g, ""))
+              }
             />
             <button
               className="primary full-btn"
